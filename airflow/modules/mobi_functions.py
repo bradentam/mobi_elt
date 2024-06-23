@@ -3,11 +3,33 @@ import sys
 import requests
 from datetime import datetime, timedelta
 from bs4 import BeautifulSoup
+import re
 import gdown
+import logging
 
-import boto3
+LOGGER = logging.getLogger("airflow.task")
 
-# no secret key
+from airflow.hooks.S3_hook import S3Hook
+
+import configparser
+import pathlib
+import psycopg2
+from psycopg2 import sql
+
+script_path = pathlib.Path(__file__).parent.resolve()
+parser = configparser.ConfigParser()
+parser.read(f"{script_path}/configuration.conf")
+
+USERNAME = parser.get("aws_config", "redshift_username")
+PASSWORD = parser.get("aws_config", "redshift_password")
+HOST = parser.get("aws_config", "redshift_hostname")
+PORT = parser.get("aws_config", "redshift_port")
+REDSHIFT_ROLE = parser.get("aws_config", "redshift_role")
+DATABASE = parser.get("aws_config", "redshift_database")
+BUCKET_NAME = parser.get("aws_config", "bucket_name")
+ACCOUNT_ID = parser.get("aws_config", "account_id")
+
+
 def download_link(**kwargs):
     """Downloads a single csv monthly by parsing the Mobi website and 
     downloading the google drive link.
@@ -36,18 +58,54 @@ def download_link(**kwargs):
             if 'google' in link.find('a').get('href') and (execution_month == month):
                 url = link.find('a').get('href')
                 print(f'retreiving link for {month}')
+
         except:
             # to parse out elements without links
             pass
-    
+
     output = f'/tmp/{execution_month}.csv'
-    gdown.download(url, output, fuzzy = True, quiet=False)
+
+    # use requests if spreadsheet
+    if 'spreadsheets' in url:
+        # adjust to download spreadsheet as csv
+        pattern = r'(.+/d/[^/]+/)'
+        url = re.search(pattern, url)[0]
+        url = url + 'export?format=csv' 
+
+        response = requests.get(url)
+        with open(output, 'wb') as f:
+            f.write(response.content)
+    else:
+        gdown.download(url, output, fuzzy = True, quiet=False)
 
 def upload_to_s3(**kwargs):
     execution_month = (kwargs['logical_date'].replace(day=1) - timedelta(days=1)).strftime("%Y-%m")
     
-    conn = boto3.resource("s3")
-    conn.meta.client.upload_file(
-        Filename=f"/tmp/{execution_month}.csv", 
-        Bucket='bradentam-test-bucket', Key=f'{execution_month}.csv'
+    hook = S3Hook()
+    hook.load_file(
+        filename=f"/tmp/{execution_month}.csv",
+        key=f'{execution_month}.csv',
+        bucket_name=BUCKET_NAME,
+        replace=True
     )
+
+def copy_to_redshift(**kwargs):
+    execution_month = (kwargs['logical_date'].replace(day=1) - timedelta(days=1)).strftime("%Y-%m")
+    file_path = f's3://{BUCKET_NAME}/{execution_month}.csv'
+    role_string = f"arn:aws:iam::{ACCOUNT_ID}:role/{REDSHIFT_ROLE}"
+    try:
+        rs_conn = psycopg2.connect(
+            dbname=DATABASE, user=USERNAME, password=PASSWORD, host=HOST, port=PORT
+        )
+    except Exception as e:
+        print(f"Unable to connect to Redshift. Error {e}")
+        sys.exit(1)
+    with rs_conn:
+        cur = rs_conn.cursor()
+        cur.execute(open(f"{script_path}/sql/create_raw_and_stage.sql", "r").read())
+        LOGGER.info("airflow.task >>> 2 - INFO logger test")
+        cur.execute(f"COPY staging_table FROM '{file_path}' IAM_ROLE '{role_string}' IGNOREHEADER 1 DELIMITER ',' DATEFORMAT 'auto' CSV;")
+        cur.execute(open(f"{script_path}/sql/clean_stage.sql", "r").read())
+        cur.execute(open(f"{script_path}/sql/insert_and_drop_stage.sql", "r").read())
+        rs_conn.commit()
+        
