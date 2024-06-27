@@ -104,7 +104,15 @@ def copy_to_redshift(**kwargs):
         cur = rs_conn.cursor()
         cur.execute(open(f"{script_path}/sql/create_raw_and_stage.sql", "r").read())
         LOGGER.info("airflow.task >>> 2 - INFO logger test")
-        cur.execute(f"COPY staging_table FROM '{file_path}' IAM_ROLE '{role_string}' IGNOREHEADER 1 DELIMITER ',' DATEFORMAT 'auto' CSV;")
+        cur.execute(f"""COPY staging_data
+                    FROM '{file_path}' IAM_ROLE '{role_string}' 
+                    IGNOREHEADER 1 
+                    DELIMITER ',' 
+                    DATEFORMAT 'auto'
+                    ACCEPTANYDATE
+                    ACCEPTINVCHARS AS '^'
+                    TRUNCATECOLUMNS
+                    CSV;""")
         cur.execute(open(f"{script_path}/sql/clean_stage.sql", "r").read())
         cur.execute(open(f"{script_path}/sql/insert_and_drop_stage.sql", "r").read())
         rs_conn.commit()
