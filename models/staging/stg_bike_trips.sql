@@ -1,5 +1,3 @@
-{{ config(materialized="incremental", unique_key="trip_id") }}
-
 select
     trip_id,
     departure_ts,
@@ -29,11 +27,17 @@ select
     membership_type,
     covered_distance,
     duration_sec,
+    covered_distance / duration_sec as avg_speed,
     departure_temperature,
     return_temperature,
     stopover_duration_sec,
     number_of_stopovers
-from
-    {{ source("raw", "raw_data") }}
-    -- where departure_ts >= '2024-05-01'
-    
+from {{ source("raw", "raw_data") }}
+
+    -- {% if is_incremental() %}
+
+    -- -- Only process new records that have been added since the last run
+    -- where departure_ts >= '2024-04-01' --and departure_ts <= '2024-05-01' --change for macro variable or (select max(departure_ts) from mart tables)
+
+    -- {% endif %}
+    where (departure_ts >= '2023-05-01')-- and (departure_ts <= '2024-05-01')

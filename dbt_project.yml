@@ -39,6 +39,8 @@ models:
   mobi_elt:
     # Applies to all files under models/example/
     staging:
-      materialized: incremental
+      +schema: staging_schema
+      +materialized: incremental
     marts:
-      materialized: table
+      +schema: marts_schema
+      +materialized: incremental

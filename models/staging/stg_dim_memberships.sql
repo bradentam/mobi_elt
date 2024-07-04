@@ -1,6 +1,12 @@
+{{
+  config(
+    unique_key='id' 
+  )
+}}
+
 WITH distinct_memberships AS (
     SELECT DISTINCT membership_type
-    FROM {{ ref('staging_bike_trips') }}
+    FROM {{ ref('stg_bike_trips') }}
     WHERE membership_type != ''
 )
 SELECT
