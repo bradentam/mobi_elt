@@ -1,0 +1,111 @@
+version: 2
+
+sources:
+  - name: raw
+    database: dev
+    schema: public
+    tables:
+        - name: raw_data
+
+models:
+  - name: staging_bike_trips
+    description: "staged bike trip data ingested from the latest month's CSV file."
+    columns:
+      - name: trip_id
+        description: "unique identifier for bike trip."
+        tests:
+          - not_null
+      - name: departure_ts
+        description: "Timestamp of departure."
+        tests:
+          - not_null
+      - name: departure_date
+        description: "Date of departure derived from departure timestamp."
+        tests:
+          - not_null
+      - name: departure_year
+        description: "Year of departure derived from departure timestamp."
+        tests:
+          - not_null
+      - name: departure_month
+        description: "Month of departure derived from departure timestamp."
+        tests:
+          - not_null
+      - name: departure_day
+        description: "Day of departure derived from departure timestamp."
+        tests:
+          - not_null
+      - name: departure_day_of_week
+        description: "Day of the week for departure derived from departure timestamp."
+        tests:
+          - not_null
+          - accepted_values:
+              values: [1, 2, 3, 4, 5, 6, 7]  # Assuming 1-7 represents days of the week
+      - name: departure_hour
+        description: "Hour of departure derived from departure timestamp."
+        tests:
+          - not_null
+          - accepted_values:
+              values: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]  # Valid hours in a day
+      - name: departure_weekend
+        description: "Boolean indicating if the departure was during the weekend."
+        tests:
+          - not_null
+      - name: return_ts
+        description: "Timestamp of return."
+        tests:
+          - not_null
+      - name: return_date
+        description: "Date of return derived from return timestamp."
+        tests:
+          - not_null
+      - name: return_year
+        description: "Year of return derived from return timestamp."
+        tests:
+          - not_null
+      - name: return_month
+        description: "Month of return derived from return timestamp."
+        tests:
+          - not_null
+      - name: return_day
+        description: "Day of return derived from return timestamp."
+        tests:
+          - not_null
+      - name: return_day_of_week
+        description: "Day of the week for return derived from return timestamp."
+        tests:
+          - not_null
+          - accepted_values:
+              values: [1, 2, 3, 4, 5, 6, 7]  # Assuming 1-7 represents days of the week
+      - name: return_hour
+        description: "Hour of return derived from return timestamp."
+        tests:
+          - not_null
+          - accepted_values:
+              values: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]  # Valid hours in a day
+      - name: return_weekend
+        description: "Boolean indicating if the return was during the weekend."
+        tests:
+          - not_null
+      - name: bike_id
+        description: "Unique identifier for the bike."
+      - name: electric_bike
+        description: "Indicates if the bike is electric (TRUE/FALSE)."
+      - name: departure_station
+        description: "Name of the station where the trip started."
+      - name: return_station
+        description: "Name of the station where the trip ended."
+      - name: membership_type
+        description: "Type of membership the user has."
+      - name: covered_distance
+        description: "Distance covered during the trip in meters."
+      - name: duration_sec
+        description: "Duration of the trip in seconds."
+      - name: departure_temperature
+        description: "Temperature at the start of the trip in celcius."
+      - name: return_temperature
+        description: "Temperature at the end of the trip in celcius."
+      - name: stopover_duration_sec
+        description: "Total duration of stopovers in seconds."
+      - name: number_of_stopovers
+        description: "Number of stopovers made during the trip."
