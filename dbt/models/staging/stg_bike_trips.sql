@@ -8,7 +8,7 @@ select
     date_part(dayofweek, departure_ts) as departure_day_of_week,
     date_part(hour, departure_ts) as departure_hour,
     case
-        when date_part(dayofweek, departure_ts) between 6 and 7 then true else false
+        when date_part(dayofweek, departure_ts) is in (0, 6) then true else false
     end as departure_weekend,
     return_ts,
     cast(return_ts as date) as return_date,
@@ -18,7 +18,7 @@ select
     date_part(dayofweek, return_ts) as return_day_of_week,
     date_part(hour, return_ts) as return_hour,
     case
-        when date_part(dayofweek, return_ts) between 6 and 7 then true else false
+        when date_part(dayofweek, return_ts) is in (0, 6) then true else false
     end as return_weekend,
     bike_id,
     electric_bike,
