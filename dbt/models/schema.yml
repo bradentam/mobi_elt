@@ -32,7 +32,7 @@ models:
         description: "Day of the week for departure derived from departure timestamp."
         tests:
           - accepted_values:
-              values: [1, 2, 3, 4, 5, 6, 7]  # Assuming 1-7 represents days of the week
+              values: [0, 1, 2, 3, 4, 5, 6] 
       - name: departure_hour
         description: "Hour of departure derived from departure timestamp."
         tests:
@@ -56,7 +56,7 @@ models:
         description: "Day of the week for return derived from return timestamp."
         tests:
           - accepted_values:
-              values: [1, 2, 3, 4, 5, 6, 7]  # Assuming 1-7 represents days of the week
+              values: [0, 1, 2, 3, 4, 5, 6]
       - name: return_hour
         description: "Hour of return derived from return timestamp."
         tests:
