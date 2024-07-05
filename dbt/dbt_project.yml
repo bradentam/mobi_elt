@@ -41,6 +41,6 @@ models:
     staging:
       +schema: staging_schema
       +materialized: incremental
-    marts:
-      +schema: marts_schema
+    mart:
+      +schema: mart_schema
       +materialized: incremental
